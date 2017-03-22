@@ -56,7 +56,7 @@ namespace Test.ADAL.NET.Unit.Mocks
             }
 
             HttpContent content = new StringContent("{\"token_type\":\"Bearer\",\"expires_in\":\"3600\","+ extendedExpiresIn + "\"resource\":\"resource1\",\"access_token\":\"some-access-token\",\"refresh_token\":\"something-encrypted\",\"id_token\":\"" +
-                                  CreateIdToken(TestConstants.DefaultUniqueId, TestConstants.DefaultDisplayableId) +
+                                  CreateIdToken(TestConstants.DefaultUniqueId, TestConstants.DefaultDisplayableId, TestConstants.DefaultTenantId) +
                                   "\"}");
             responseMessage.Content = content;
             return responseMessage;
@@ -116,21 +116,27 @@ namespace Test.ADAL.NET.Unit.Mocks
             return responseMessage;
         }
 
-        public static HttpResponseMessage CreateSuccessTokenResponseMessage(string uniqueId, string displayableId, string resource)
+        public static HttpResponseMessage CreateSuccessTokenResponseMessage(string uniqueId, string displayableId,
+            string resource)
         {
-            string idToken = string.Format(CultureInfo.InvariantCulture, "{0}", CreateIdToken(uniqueId, displayableId));
+            return CreateSuccessTokenResponseMessage(uniqueId, displayableId, resource, TestConstants.DefaultTenantId);
+        }
+
+        public static HttpResponseMessage CreateSuccessTokenResponseMessage(string uniqueId, string displayableId, string resource, string tenantId)
+        {
+            string idToken = string.Format(CultureInfo.InvariantCulture, "{0}", CreateIdToken(uniqueId, displayableId, tenantId));
             HttpResponseMessage responseMessage = new HttpResponseMessage(HttpStatusCode.OK);
             HttpContent content =
                 new StringContent("{\"token_type\":\"Bearer\",\"expires_in\":\"3599\",\"resource\":\"" +
                                   resource +
-                                  "\",\"access_token\":\"some-access-token\",\"refresh_token\":\"OAAsomethingencryptedQwgAA\",\"id_token\":\"" +
+                                  "\",\"access_token\":\"some-access-token\",\"refresh_token\":\""+ Guid.NewGuid() +"\",\"id_token\":\"" +
                                   idToken +
                                   "\"}");
             responseMessage.Content = content;
             return responseMessage;
         }
 
-        private static string CreateIdToken(string uniqueId, string displayableId)
+        private static string CreateIdToken(string uniqueId, string displayableId, string tenantId)
         {
             string header = "{alg: \"none\","+
                              "typ:\"JWT\""+
@@ -145,7 +151,7 @@ namespace Test.ADAL.NET.Unit.Mocks
                         "\"oid\": \"" + uniqueId + "\"," +
                         "\"upn\": \"" + displayableId + "\"," +
                         "\"sub\": \"werwerewrewrew-Qd80ehIEdFus\"," +
-                        "\"tid\": \"some-tenant-id\"," +
+                        "\"tid\": \""+ tenantId +"\"," +
                         "\"ver\": \"2.0\"}";
 
             return string.Format(CultureInfo.InvariantCulture, "{0}.{1}.signature", Base64UrlEncoder.Encode(header), Base64UrlEncoder.Encode(payload));

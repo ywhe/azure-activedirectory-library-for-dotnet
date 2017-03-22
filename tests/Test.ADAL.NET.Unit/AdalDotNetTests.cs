@@ -29,6 +29,7 @@ using Microsoft.IdentityModel.Clients.ActiveDirectory;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Security.Cryptography.X509Certificates;
@@ -71,7 +72,7 @@ namespace Test.ADAL.NET.Unit
                     context.AcquireTokenAsync(TestConstants.DefaultResource, TestConstants.DefaultClientId,
                         TestConstants.DefaultRedirectUri, platformParameters);
             Assert.IsNotNull(result);
-            Assert.IsTrue(context.Authenticator.Authority.EndsWith("/some-tenant-id/"));
+            Assert.IsTrue(context.Authenticator.Authority.EndsWith("/home/"));
             Assert.AreEqual(result.AccessToken, "some-access-token");
             Assert.IsNotNull(result.UserInfo);
             Assert.AreEqual(result.ExpiresOn, result.ExtendedExpiresOn);
@@ -98,7 +99,7 @@ namespace Test.ADAL.NET.Unit
                     context.AcquireTokenAsync(TestConstants.DefaultResource, TestConstants.DefaultClientId,
                         TestConstants.DefaultRedirectUri, platformParameters);
             Assert.IsNotNull(result);
-            Assert.IsTrue(context.Authenticator.Authority.EndsWith("/some-tenant-id/"));
+            Assert.IsTrue(context.Authenticator.Authority.EndsWith("/home/"));
             Assert.AreEqual(result.AccessToken, "some-access-token");
             Assert.IsNotNull(result.UserInfo);
             Assert.IsTrue(result.ExtendedExpiresOn.Subtract(result.ExpiresOn) > TimeSpan.FromSeconds(5));
@@ -1344,6 +1345,44 @@ namespace Test.ADAL.NET.Unit
             var ex = AssertException.TaskThrows<AdalSilentTokenAcquisitionException>(() =>
                 context.AcquireTokenSilentAsync(TestConstants.DefaultResource, TestConstants.DefaultClientId, new UserIdentifier("unique_id", UserIdentifierType.UniqueId)));
             Assert.IsTrue((ex.InnerException.InnerException.InnerException).Message.Contains(TestConstants.ErrorSubCode));
+        }
+
+        [TestMethod]
+        [Description("Positive Test for AcquireToken testing default token cache")]
+        public async Task AcquireTokenCrossTenantTest()
+        {
+            TokenCache cache = new TokenCache();
+            MockHelpers.ConfigureMockWebUI(new AuthorizationResult(AuthorizationStatus.Success,
+                TestConstants.DefaultRedirectUri + "?code=some-code"));
+            HttpMessageHandlerFactory.AddMockHandler(new MockHttpMessageHandler()
+            {
+                Method = HttpMethod.Post,
+                ResponseMessage = MockHelpers.CreateSuccessTokenResponseMessage()
+            });
+
+            //for silent request
+            HttpMessageHandlerFactory.AddMockHandler(new MockHttpMessageHandler()
+            {
+                Method = HttpMethod.Post,
+                ResponseMessage = MockHelpers.CreateSuccessTokenResponseMessage(TestConstants.DefaultUniqueId +"more",
+                    TestConstants.DefaultDisplayableId, TestConstants.DefaultResource, TestConstants.GuestTenantId)
+            });
+
+            var context = new AuthenticationContext(TestConstants.DefaultAuthorityCommonTenant, cache);
+            AuthenticationResult result =
+                await
+                    context.AcquireTokenAsync(TestConstants.DefaultResource, TestConstants.DefaultClientId,
+                        TestConstants.DefaultRedirectUri, platformParameters);
+            Assert.IsNotNull(result);
+            Assert.AreEqual(result.AccessToken, "some-access-token");
+            Assert.IsNotNull(result.UserInfo);
+
+            context = new AuthenticationContext(TestConstants.DefaultAuthorityGuestTenant, cache);
+            result = await context.AcquireTokenSilentAsync(TestConstants.DefaultResource, TestConstants.DefaultClientId,
+                new UserIdentifier(TestConstants.DefaultUniqueId, UserIdentifierType.UniqueId));
+            Assert.IsNotNull(result);
+            Assert.AreEqual(2, cache.Count);
+            Assert.AreEqual(cache.tokenCacheDictionary.Values.ToList()[0].RefreshToken, cache.tokenCacheDictionary.Values.ToList()[1].RefreshToken);
         }
     }
 }

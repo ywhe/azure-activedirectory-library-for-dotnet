@@ -6,6 +6,8 @@ namespace Test.ADAL.NET.Unit
     {
         public static readonly string DefaultResource = "resource1";
         public static readonly string AnotherResource = "resource2";
+        public static readonly string DefaultTenantId = "home";
+        public static readonly string GuestTenantId = "guest";
         public static readonly string DefaultAdfsAuthorityTenant = "https://login.contodo.com/adfs/";
         public static readonly string DefaultAuthorityHomeTenant = "https://login.microsoftonline.com/home/";
         public static readonly string DefaultAuthorityGuestTenant = "https://login.microsoftonline.com/guest/";
