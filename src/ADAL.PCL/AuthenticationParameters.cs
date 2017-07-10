@@ -60,9 +60,9 @@ namespace Microsoft.IdentityModel.Clients.ActiveDirectory
         /// </summary>
         /// <param name="resourceUrl">Address of the resource</param>
         /// <returns>AuthenticationParameters object containing authentication parameters</returns>
-        public static async Task<AuthenticationParameters> CreateFromResourceUrlAsync(Uri resourceUrl)
+        public static async Task<AuthenticationParameters> CreateFromResourceUrlAsync(Uri resourceUrl,IWebProxy proxy)
         {
-            return await CreateFromResourceUrlCommonAsync(resourceUrl).ConfigureAwait(false);
+            return await CreateFromResourceUrlCommonAsync(resourceUrl,proxy).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -114,7 +114,7 @@ namespace Microsoft.IdentityModel.Clients.ActiveDirectory
             return authParams;
         }
 
-        private static async Task<AuthenticationParameters> CreateFromResourceUrlCommonAsync(Uri resourceUrl)
+        private static async Task<AuthenticationParameters> CreateFromResourceUrlCommonAsync(Uri resourceUrl, IWebProxy proxy)
         {
             if (resourceUrl == null)
             {
@@ -125,7 +125,7 @@ namespace Microsoft.IdentityModel.Clients.ActiveDirectory
 
             try
             {
-                IHttpClient request = PlatformPlugin.HttpClientFactory.Create(resourceUrl.AbsoluteUri, null);
+                IHttpClient request = PlatformPlugin.HttpClientFactory.Create(resourceUrl.AbsoluteUri, null, proxy);
                 using (await request.GetResponseAsync().ConfigureAwait(false))
                 {
                     var ex = new AdalException(AdalError.UnauthorizedResponseExpected);

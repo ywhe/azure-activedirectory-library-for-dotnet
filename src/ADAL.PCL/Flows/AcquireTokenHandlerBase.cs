@@ -43,9 +43,12 @@ namespace Microsoft.IdentityModel.Clients.ActiveDirectory
         protected CacheQueryData CacheQueryData = new CacheQueryData();
 
         private AdalHttpClient client = null;
+        protected IWebProxy Proxy { get; set; }
 
-        protected AcquireTokenHandlerBase(RequestData requestData)
+        protected AcquireTokenHandlerBase(RequestData requestData, IWebProxy proxy = null)
         {
+            //TODO
+            Proxy = proxy;
             this.Authenticator = requestData.Authenticator;
             this.CallState = CreateCallState(this.Authenticator.CorrelationId);
             PlatformPlugin.Logger.Information(this.CallState,
@@ -312,7 +315,7 @@ namespace Microsoft.IdentityModel.Clients.ActiveDirectory
 
         private async Task<AuthenticationResultEx> SendHttpMessageAsync(IRequestParameters requestParameters)
         {
-            client = new AdalHttpClient(this.Authenticator.TokenUri, this.CallState)
+            client = new AdalHttpClient(this.Authenticator.TokenUri, this.CallState,Proxy)
             { Client = { BodyParameters = requestParameters } };
             TokenResponse tokenResponse = await client.GetResponseAsync<TokenResponse>().ConfigureAwait(false);
             return tokenResponse.GetResult();

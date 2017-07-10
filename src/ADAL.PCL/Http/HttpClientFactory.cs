@@ -26,6 +26,7 @@
 //------------------------------------------------------------------------------
 
 using System;
+using System.Net;
 
 namespace Microsoft.IdentityModel.Clients.ActiveDirectory
 {
@@ -36,9 +37,9 @@ namespace Microsoft.IdentityModel.Clients.ActiveDirectory
             get { return true; }
         }
 
-        public IHttpClient Create(string uri, CallState callState)
+        public IHttpClient Create(string uri, CallState callState, IWebProxy proxy)
         {
-            return new HttpClientWrapper(uri, callState);
+            return new HttpClientWrapper(uri, callState, proxy);
         }
     }
 }

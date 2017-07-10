@@ -26,14 +26,15 @@
 //------------------------------------------------------------------------------
 
 using System;
+using System.Net;
 using System.Threading.Tasks;
 
 namespace Microsoft.IdentityModel.Clients.ActiveDirectory
 {
     internal class AcquireTokenSilentHandler : AcquireTokenHandlerBase
     {
-        public AcquireTokenSilentHandler(RequestData requestData, UserIdentifier userId, IPlatformParameters parameters)
-            : base(requestData)
+        public AcquireTokenSilentHandler(RequestData requestData, UserIdentifier userId, IPlatformParameters parameters, IWebProxy proxy = null)
+            : base(requestData, proxy)
         {
             if (userId == null)
             {
@@ -45,7 +46,7 @@ namespace Microsoft.IdentityModel.Clients.ActiveDirectory
             this.UniqueId = userId.UniqueId;
             this.DisplayableId = userId.DisplayableId;
             this.UserIdentifierType = userId.Type;
-            PlatformPlugin.BrokerHelper.PlatformParameters = parameters;    
+            PlatformPlugin.BrokerHelper.PlatformParameters = parameters;
             this.SupportADFS = true;
 
             this.brokerParameters["username"] = userId.Id;
@@ -56,17 +57,17 @@ namespace Microsoft.IdentityModel.Clients.ActiveDirectory
         protected override Task<AuthenticationResultEx> SendTokenRequestAsync()
         {
             if (ResultEx == null)
-                {
+            {
                 PlatformPlugin.Logger.Verbose(this.CallState, "No token matching arguments found in the cache");
                 throw new AdalSilentTokenAcquisitionException();
-                }
-            
+            }
+
             throw new AdalSilentTokenAcquisitionException(ResultEx.Exception);
 
         }
 
         protected override void AddAditionalRequestParameters(DictionaryRequestParameters requestParameters)
-        {            
+        {
         }
     }
 }

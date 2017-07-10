@@ -63,18 +63,19 @@ namespace Microsoft.IdentityModel.Clients.ActiveDirectory
     {
         private const string WsTrustSoapTransport = "http://schemas.xmlsoap.org/soap/http";
 
-        public static async Task<WsTrustAddress> FetchWsTrustAddressFromMexAsync(string federationMetadataUrl, UserAuthType userAuthType, CallState callState)
+        public static async Task<WsTrustAddress> FetchWsTrustAddressFromMexAsync(string federationMetadataUrl, UserAuthType userAuthType, CallState callState, IWebProxy proxy)
         {
-            XDocument mexDocument = await FetchMexAsync(federationMetadataUrl, callState).ConfigureAwait(false);
+            XDocument mexDocument = await FetchMexAsync(federationMetadataUrl, callState, proxy).ConfigureAwait(false);
             return ExtractWsTrustAddressFromMex(mexDocument, userAuthType, callState);
         }
 
-        internal static async Task<XDocument> FetchMexAsync(string federationMetadataUrl, CallState callState)
+        internal static async Task<XDocument> FetchMexAsync(string federationMetadataUrl, CallState callState, IWebProxy proxy)
         {
             XDocument mexDocument;
             try
             {
-                IHttpClient request = PlatformPlugin.HttpClientFactory.Create(federationMetadataUrl, callState);
+                IHttpClient request = PlatformPlugin.HttpClientFactory.Create(federationMetadataUrl, callState, proxy);
+
                 using (var response = await request.GetResponseAsync().ConfigureAwait(false))
                 {
                     mexDocument = XDocument.Load(EncodingHelper.GenerateStreamFromString(response.ResponseString), LoadOptions.None);

@@ -26,20 +26,21 @@
 //------------------------------------------------------------------------------
 
 using System.Collections.Generic;
+using System.Net;
 using System.Net.Http;
 
 namespace Microsoft.IdentityModel.Clients.ActiveDirectory
 {
     internal static class HttpMessageHandlerFactory
     {
-        internal static HttpMessageHandler GetMessageHandler(bool useDefaultCredentials)
+        internal static HttpMessageHandler GetMessageHandler(bool useDefaultCredentials,IWebProxy proxy=null)
         {
             if (MockHandlerQueue.Count > 0)
             {
                 return MockHandlerQueue.Dequeue();
             }
 
-            return new HttpClientHandler { UseDefaultCredentials = useDefaultCredentials, Proxy = PlatformPlugin.WebProxyProvider.GetDefaultWebProxy() };
+            return new HttpClientHandler { UseDefaultCredentials = useDefaultCredentials, Proxy = proxy?? PlatformPlugin.WebProxyProvider.GetDefaultWebProxy() };
         }
 
         private static readonly Queue<HttpMessageHandler> MockHandlerQueue = new Queue<HttpMessageHandler>();

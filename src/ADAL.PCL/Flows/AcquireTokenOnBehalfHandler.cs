@@ -27,6 +27,7 @@
 
 using System;
 using System.Globalization;
+using System.Net;
 using System.Threading.Tasks;
 
 namespace Microsoft.IdentityModel.Clients.ActiveDirectory
@@ -35,8 +36,8 @@ namespace Microsoft.IdentityModel.Clients.ActiveDirectory
     {
         private readonly UserAssertion userAssertion;
 
-        public AcquireTokenOnBehalfHandler(RequestData requestData, UserAssertion userAssertion)
-            : base(requestData)
+        public AcquireTokenOnBehalfHandler(RequestData requestData, UserAssertion userAssertion, IWebProxy proxy)
+            : base(requestData, proxy)
         {
             if (userAssertion == null)
             {

@@ -25,12 +25,14 @@
 //
 //------------------------------------------------------------------------------
 
+using System.Net;
+
 namespace Microsoft.IdentityModel.Clients.ActiveDirectory
 {
     internal class AcquireTokenForClientHandler : AcquireTokenHandlerBase
     {
-        public AcquireTokenForClientHandler(RequestData requestData)
-            : base(requestData)
+        public AcquireTokenForClientHandler(RequestData requestData,IWebProxy proxy)
+            : base(requestData,proxy)
         {
             this.SupportADFS = true;
         }

@@ -26,6 +26,7 @@
 //------------------------------------------------------------------------------
 
 using System;
+using System.Net;
 
 namespace Microsoft.IdentityModel.Clients.ActiveDirectory
 {
@@ -35,8 +36,8 @@ namespace Microsoft.IdentityModel.Clients.ActiveDirectory
 
         private readonly Uri redirectUri;
 
-        public AcquireTokenByAuthorizationCodeHandler(RequestData requestData, string authorizationCode, Uri redirectUri)
-            : base(requestData)
+        public AcquireTokenByAuthorizationCodeHandler(RequestData requestData, string authorizationCode, Uri redirectUri, IWebProxy proxy)
+            : base(requestData, proxy)
         {
             if (requestData.Resource == null)
             {

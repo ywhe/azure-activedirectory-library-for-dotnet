@@ -27,6 +27,7 @@
 
 using System;
 using System.Globalization;
+using System.Net;
 using System.Reflection;
 using System.Threading.Tasks;
 
@@ -45,6 +46,7 @@ namespace Microsoft.IdentityModel.Clients.ActiveDirectory
     public sealed class AuthenticationContext
     {
         internal Authenticator Authenticator;
+        internal IWebProxy Proxy { get; set; }
 
         static AuthenticationContext()
         {
@@ -57,8 +59,8 @@ namespace Microsoft.IdentityModel.Clients.ActiveDirectory
         /// Using this constructor will turn ON validation of the authority URL by default if validation is supported for the authority address.
         /// </summary>
         /// <param name="authority">Address of the authority to issue token.</param>
-        public AuthenticationContext(string authority)
-            : this(authority, AuthorityValidationType.NotProvided, TokenCache.DefaultShared)
+        public AuthenticationContext(string authority, IWebProxy proxy = null)
+            : this(authority, AuthorityValidationType.NotProvided, TokenCache.DefaultShared, proxy)
         {
         }
 
@@ -68,8 +70,8 @@ namespace Microsoft.IdentityModel.Clients.ActiveDirectory
         /// </summary>
         /// <param name="authority">Address of the authority to issue token.</param>
         /// <param name="validateAuthority">Flag to turn address validation ON or OFF.</param>
-        public AuthenticationContext(string authority, bool validateAuthority)
-            : this(authority, validateAuthority ? AuthorityValidationType.True : AuthorityValidationType.False, TokenCache.DefaultShared)
+        public AuthenticationContext(string authority, bool validateAuthority, IWebProxy proxy = null)
+            : this(authority, validateAuthority ? AuthorityValidationType.True : AuthorityValidationType.False, TokenCache.DefaultShared, proxy)
         {
         }
 
@@ -79,8 +81,8 @@ namespace Microsoft.IdentityModel.Clients.ActiveDirectory
         /// </summary>
         /// <param name="authority">Address of the authority to issue token.</param>
         /// <param name="tokenCache">Token cache used to lookup cached tokens on calls to AcquireToken</param>
-        public AuthenticationContext(string authority, TokenCache tokenCache)
-            : this(authority, AuthorityValidationType.NotProvided, tokenCache)
+        public AuthenticationContext(string authority, TokenCache tokenCache, IWebProxy proxy = null)
+            : this(authority, AuthorityValidationType.NotProvided, tokenCache, proxy)
         {
         }
 
@@ -91,17 +93,19 @@ namespace Microsoft.IdentityModel.Clients.ActiveDirectory
         /// <param name="authority">Address of the authority to issue token.</param>
         /// <param name="validateAuthority">Flag to turn address validation ON or OFF.</param>
         /// <param name="tokenCache">Token cache used to lookup cached tokens on calls to AcquireToken</param>
-        public AuthenticationContext(string authority, bool validateAuthority, TokenCache tokenCache)
-            : this(authority, validateAuthority ? AuthorityValidationType.True : AuthorityValidationType.False, tokenCache)
+        public AuthenticationContext(string authority, bool validateAuthority, TokenCache tokenCache, IWebProxy proxy = null)
+            : this(authority, validateAuthority ? AuthorityValidationType.True : AuthorityValidationType.False, tokenCache, proxy)
         {
         }
 
-        private AuthenticationContext(string authority, AuthorityValidationType validateAuthority, TokenCache tokenCache)
+        private AuthenticationContext(string authority, AuthorityValidationType validateAuthority, TokenCache tokenCache, IWebProxy proxy = null)
         {
             // If authorityType is not provided (via first constructor), we validate by default (except for ASG and Office tenants).
             this.Authenticator = new Authenticator(authority, (validateAuthority != AuthorityValidationType.False));
 
             this.TokenCache = tokenCache;
+
+            Proxy = proxy;
         }
         /// <summary>
         /// Used to set the flag for AAD extended lifetime
@@ -175,7 +179,7 @@ namespace Microsoft.IdentityModel.Clients.ActiveDirectory
         /// <returns>It contains Access Token, Refresh Token and the Access Token's expiration time.</returns>
         public async Task<DeviceCodeResult> AcquireDeviceCodeAsync(string resource, string clientId, string extraQueryParameters)
         {
-            var handler = new AcquireDeviceCodeHandler(this.Authenticator, resource, clientId, extraQueryParameters);
+            var handler = new AcquireDeviceCodeHandler(this.Authenticator, resource, clientId, extraQueryParameters,Proxy);
             return await handler.RunHandlerAsync().ConfigureAwait(false);
         }
 
@@ -201,7 +205,7 @@ namespace Microsoft.IdentityModel.Clients.ActiveDirectory
                 ClientKey = new ClientKey(deviceCodeResult.ClientId)
             };
 
-            var handler = new AcquireTokenByDeviceCodeHandler(requestData, deviceCodeResult);
+            var handler = new AcquireTokenByDeviceCodeHandler(requestData, deviceCodeResult,Proxy);
             return await handler.RunAsync().ConfigureAwait(false);
         }
 
@@ -458,7 +462,7 @@ namespace Microsoft.IdentityModel.Clients.ActiveDirectory
                 ClientKey = new ClientKey(clientId),
                 ExtendedLifeTimeEnabled = ExtendedLifeTimeEnabled
             };
-            var handler = new AcquireTokenInteractiveHandler(requestData, redirectUri, null, userId, extraQueryParameters, null);
+            var handler = new AcquireTokenInteractiveHandler(requestData, redirectUri, null, userId, extraQueryParameters, null,Proxy);
             return await handler.CreateAuthorizationUriAsync(this.CorrelationId).ConfigureAwait(false);
         }
 
@@ -522,7 +526,7 @@ namespace Microsoft.IdentityModel.Clients.ActiveDirectory
             {
                 requestData.Resource = nullResource;
             }
-            var handler = new AcquireTokenByAuthorizationCodeHandler(requestData, authorizationCode, redirectUri);
+            var handler = new AcquireTokenByAuthorizationCodeHandler(requestData, authorizationCode, redirectUri,Proxy);
             return await handler.RunAsync().ConfigureAwait(false);
         }
 
@@ -537,7 +541,7 @@ namespace Microsoft.IdentityModel.Clients.ActiveDirectory
                 ExtendedLifeTimeEnabled = this.ExtendedLifeTimeEnabled,
                 SubjectType = TokenSubjectType.Client
             };
-            var handler = new AcquireTokenForClientHandler(requestData);
+            var handler = new AcquireTokenForClientHandler(requestData,Proxy);
             return await handler.RunAsync().ConfigureAwait(false);
         }
 
@@ -552,7 +556,7 @@ namespace Microsoft.IdentityModel.Clients.ActiveDirectory
                 ExtendedLifeTimeEnabled = this.ExtendedLifeTimeEnabled
             };
 
-            var handler = new AcquireTokenOnBehalfHandler(requestData, userAssertion);
+            var handler = new AcquireTokenOnBehalfHandler(requestData, userAssertion,Proxy);
             return await handler.RunAsync().ConfigureAwait(false);
         }
 
@@ -571,7 +575,7 @@ namespace Microsoft.IdentityModel.Clients.ActiveDirectory
                 ClientKey = new ClientKey(clientId),
                 ExtendedLifeTimeEnabled = this.ExtendedLifeTimeEnabled
             };
-            var handler = new AcquireTokenNonInteractiveHandler(requestData, userCredential);
+            var handler = new AcquireTokenNonInteractiveHandler(requestData, userCredential,Proxy);
             return await handler.RunAsync().ConfigureAwait(false);
         }
 
@@ -585,7 +589,7 @@ namespace Microsoft.IdentityModel.Clients.ActiveDirectory
                 ClientKey = new ClientKey(clientId),
                 ExtendedLifeTimeEnabled = this.ExtendedLifeTimeEnabled,
             };
-            var handler = new AcquireTokenNonInteractiveHandler(requestData, userAssertion);
+            var handler = new AcquireTokenNonInteractiveHandler(requestData, userAssertion,Proxy);
             return await handler.RunAsync().ConfigureAwait(false);
         }
 
@@ -599,7 +603,7 @@ namespace Microsoft.IdentityModel.Clients.ActiveDirectory
                 ClientKey = new ClientKey(clientId),
                 ExtendedLifeTimeEnabled = this.ExtendedLifeTimeEnabled,
             };
-            var handler = new AcquireTokenInteractiveHandler(requestData, redirectUri, parameters, userId, extraQueryParameters, this.CreateWebAuthenticationDialog(parameters));
+            var handler = new AcquireTokenInteractiveHandler(requestData, redirectUri, parameters, userId, extraQueryParameters, this.CreateWebAuthenticationDialog(parameters),Proxy);
             return await handler.RunAsync().ConfigureAwait(false);
         }
 
@@ -614,7 +618,7 @@ namespace Microsoft.IdentityModel.Clients.ActiveDirectory
                 ClientKey = clientKey
             };
 
-            var handler = new AcquireTokenSilentHandler(requestData, userId, parameters);
+            var handler = new AcquireTokenSilentHandler(requestData, userId, parameters,Proxy);
             return await handler.RunAsync().ConfigureAwait(false);
         }
     }

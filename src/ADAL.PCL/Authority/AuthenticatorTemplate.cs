@@ -26,6 +26,7 @@
 //------------------------------------------------------------------------------
 
 using System.IO;
+using System.Net;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Json;
 using System.Text;
@@ -79,7 +80,7 @@ namespace Microsoft.IdentityModel.Clients.ActiveDirectory
         [DataMember]
         public string UserRealmEndpoint { get; internal set; }
 
-        public async Task VerifyAnotherHostByInstanceDiscoveryAsync(string host, string tenant, CallState callState)
+        public async Task VerifyAnotherHostByInstanceDiscoveryAsync(string host, string tenant, CallState callState,IWebProxy proxy)
         {
             string instanceDiscoveryEndpoint = this.InstanceDiscoveryEndpoint;
             instanceDiscoveryEndpoint += ("?api-version=1.0&authorization_endpoint=" + AuthorizeEndpointTemplate);
@@ -88,7 +89,7 @@ namespace Microsoft.IdentityModel.Clients.ActiveDirectory
 
             try
             {
-                var client = new AdalHttpClient(instanceDiscoveryEndpoint, callState);
+                var client = new AdalHttpClient(instanceDiscoveryEndpoint, callState, proxy);
                 InstanceDiscoveryResponse discoveryResponse = await client.GetResponseAsync<InstanceDiscoveryResponse>().ConfigureAwait(false);
 
                 if (discoveryResponse.TenantDiscoveryEndpoint == null)

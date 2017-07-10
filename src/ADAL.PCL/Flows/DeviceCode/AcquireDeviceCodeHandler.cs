@@ -28,6 +28,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Net;
 using System.Threading.Tasks;
 
 namespace Microsoft.IdentityModel.Clients.ActiveDirectory
@@ -39,16 +40,19 @@ namespace Microsoft.IdentityModel.Clients.ActiveDirectory
         private string resource;
         private CallState callState;
         private string extraQueryParameters;
+        private IWebProxy Proxy { get; set; }
 
-        public AcquireDeviceCodeHandler(Authenticator authenticator, string resource, string clientId, string extraQueryParameters)
+        public AcquireDeviceCodeHandler(Authenticator authenticator, string resource, string clientId, string extraQueryParameters, IWebProxy proxy = null)
         {
+            //TODO
             this.authenticator = authenticator;
             this.callState = AcquireTokenHandlerBase.CreateCallState(this.authenticator.CorrelationId);
             this.clientKey = new ClientKey(clientId);
             this.resource = resource;
             this.extraQueryParameters = extraQueryParameters;
+            Proxy = proxy;
         }
-        
+
         private string CreateDeviceCodeRequestUriString()
         {
             var deviceCodeRequestParameters = new DictionaryRequestParameters(this.resource, this.clientKey);
@@ -57,7 +61,7 @@ namespace Microsoft.IdentityModel.Clients.ActiveDirectory
             {
                 deviceCodeRequestParameters[OAuthParameter.CorrelationId] = this.callState.CorrelationId.ToString();
             }
-            
+
             if (PlatformPlugin.HttpClientFactory.AddAdditionalHeaders)
             {
                 IDictionary<string, string> adalIdParameters = AdalIdHelper.GetAdalIdParameters();
@@ -89,7 +93,7 @@ namespace Microsoft.IdentityModel.Clients.ActiveDirectory
         {
             await this.authenticator.UpdateFromTemplateAsync(this.callState).ConfigureAwait(false);
             this.ValidateAuthorityType();
-            AdalHttpClient client = new AdalHttpClient(CreateDeviceCodeRequestUriString(), this.callState);
+            AdalHttpClient client = new AdalHttpClient(CreateDeviceCodeRequestUriString(), this.callState,Proxy);
             DeviceCodeResponse response = await client.GetResponseAsync<DeviceCodeResponse>().ConfigureAwait(false);
 
             if (!string.IsNullOrEmpty(response.Error))

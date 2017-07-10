@@ -28,6 +28,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 
 namespace Microsoft.IdentityModel.Clients.ActiveDirectory
@@ -60,7 +61,7 @@ namespace Microsoft.IdentityModel.Clients.ActiveDirectory
             }
         }
 
-        public async Task<AuthenticatorTemplate> FindMatchingItemAsync(bool validateAuthority, string host, string tenant, CallState callState)
+        public async Task<AuthenticatorTemplate> FindMatchingItemAsync(bool validateAuthority, string host, string tenant, CallState callState, IWebProxy proxy)
         {
             AuthenticatorTemplate matchingAuthenticatorTemplate = null;
             if (validateAuthority)
@@ -69,7 +70,7 @@ namespace Microsoft.IdentityModel.Clients.ActiveDirectory
                 if (matchingAuthenticatorTemplate == null)
                 {
                     // We only check with the first trusted authority (login.windows.net) for instance discovery
-                    await this.First().VerifyAnotherHostByInstanceDiscoveryAsync(host, tenant, callState).ConfigureAwait(false);
+                    await this.First().VerifyAnotherHostByInstanceDiscoveryAsync(host, tenant, callState, proxy).ConfigureAwait(false);
                 }
             }
 

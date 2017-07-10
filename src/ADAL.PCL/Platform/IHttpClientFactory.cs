@@ -25,11 +25,13 @@
 //
 //------------------------------------------------------------------------------
 
+using System.Net;
+
 namespace Microsoft.IdentityModel.Clients.ActiveDirectory
 {
     interface IHttpClientFactory
     {
-        IHttpClient Create(string uri, CallState callState);
+        IHttpClient Create(string uri, CallState callState, IWebProxy proxy);
 
         bool AddAdditionalHeaders { get; }
     }

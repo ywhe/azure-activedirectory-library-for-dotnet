@@ -26,6 +26,7 @@
 //------------------------------------------------------------------------------
 
 using System;
+using System.Net;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -44,8 +45,9 @@ namespace Microsoft.IdentityModel.Clients.ActiveDirectory
         private static readonly AuthenticatorTemplateList AuthenticatorTemplateList = new AuthenticatorTemplateList();
 
         private bool updatedFromTemplate; 
+        private IWebProxy Proxy { get; set; }
 
-        public Authenticator(string authority, bool validateAuthority)
+        public Authenticator(string authority, bool validateAuthority,IWebProxy proxy=null)
         {
             this.Authority = CanonicalizeUri(authority);
 
@@ -57,6 +59,7 @@ namespace Microsoft.IdentityModel.Clients.ActiveDirectory
             }
 
             this.ValidateAuthority = validateAuthority;
+            Proxy = proxy;
         }
 
         public string Authority { get; private set; }
@@ -88,7 +91,7 @@ namespace Microsoft.IdentityModel.Clients.ActiveDirectory
                 string path = authorityUri.AbsolutePath.Substring(1);
                 string tenant = path.Substring(0, path.IndexOf("/", StringComparison.Ordinal));
 
-                AuthenticatorTemplate matchingTemplate = await AuthenticatorTemplateList.FindMatchingItemAsync(this.ValidateAuthority, host, tenant, callState).ConfigureAwait(false);
+                AuthenticatorTemplate matchingTemplate = await AuthenticatorTemplateList.FindMatchingItemAsync(this.ValidateAuthority, host, tenant, callState,Proxy).ConfigureAwait(false);
 
                 this.AuthorizationUri = matchingTemplate.AuthorizeEndpoint.Replace("{tenant}", tenant);
                 this.DeviceCodeUri = matchingTemplate.DeviceCodeEndpoint.Replace("{tenant}", tenant);
